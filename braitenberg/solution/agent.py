@@ -26,8 +26,13 @@ from preprocessing import preprocess
 
 @dataclass
 class BraitenbergAgentConfig:
-    gain: float = 0.1
-    const: float = 0.1
+    gain: float = 0.2
+    const: float = 0.2
+
+
+def sigmoid(x):
+    print(f"sigmoid({x=:.2f})")
+    return 1 / (1 + np.math.exp(-x))
 
 
 class BraitenbergAgent:
@@ -71,28 +76,31 @@ class BraitenbergAgent:
 
         if self.left is None:
             # if it is the first time, we initialize the structures
-            shape = self.rgb.shape[0], self.rgb.shape[1]
-            self.left = get_motor_left_matrix(shape)
-            self.right = get_motor_right_matrix(shape)
+            self.shape = self.rgb.shape[0], self.rgb.shape[1]
+            self.left = get_motor_left_matrix(self.shape)
+            self.right = get_motor_right_matrix(self.shape)
 
         # let's take only the intensity of RGB
         P = preprocess(self.rgb)
         # now we just compute the activation of our sensors
-        l = float(np.sum(P * self.left))
-        r = float(np.sum(P * self.right))
+        l = sigmoid(np.sum(P * self.left) / np.prod(self.shape))
+        r = sigmoid(np.sum(P * self.right) / np.prod(self.shape))
 
         # These are big numbers -- we want to normalize them.
         # We normalize them using the history
 
         # first, we remember the high/low of these raw signals
-        self.l_max = max(l, self.l_max)
-        self.r_max = max(r, self.r_max)
-        self.l_min = min(l, self.l_min)
-        self.r_min = min(r, self.r_min)
+        # self.l_max = max(l, self.l_max)
+        # self.r_max = max(r, self.r_max)
+        # self.l_min = min(l, self.l_min)
+        # self.r_min = min(r, self.r_min)
 
         # now rescale from 0 to 1
-        ls = rescale(l, self.l_min, self.l_max)
-        rs = rescale(r, self.r_min, self.r_max)
+        # ls = rescale(l, self.l_min, self.l_max)
+        # rs = rescale(r, self.r_min, self.r_max)
+
+        ls = l
+        rs = r
 
         gain = self.config.gain
         const = self.config.const
